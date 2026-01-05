@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { Link } from 'react-router-dom'
 import {
@@ -7,12 +7,14 @@ import {
   selectIncidentsError,
   fetchIncidents,
 } from '../store/slices/incidentsSlice'
+import Modal from '../components/Modal'
 
 function Dashboard() {
   const dispatch = useDispatch()
   const incidents = useSelector(selectAllIncidents)
   const loading = useSelector(selectIncidentsLoading)
   const error = useSelector(selectIncidentsError)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     // Uncomment to fetch from API instead of using dummy data
@@ -65,15 +67,22 @@ function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Incidents</h1>
-        <p className="text-gray-600 mt-2">
-          Manage and track all system incidents
-        </p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Incidents</h1>
+          <p className="text-gray-600 mt-2">
+            Manage and track all system incidents
+          </p>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+        >
+          + Create Incident
+        </button>
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <h1>Test</h1>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -151,6 +160,15 @@ function Dashboard() {
           <p className="text-gray-500 text-lg">No incidents found</p>
         </div>
       )}
+
+      {/* Create Incident Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Create New Incident"
+      >
+        <p className="text-gray-600">Your form content goes here...</p>
+      </Modal>
     </div>
   )
 }
