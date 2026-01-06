@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-function Modal({ isOpen, onClose, title, children }) {
+function Modal({ isOpen, onClose, title, children, onSubmit }) {
   // Close modal on ESC key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -20,6 +20,13 @@ function Modal({ isOpen, onClose, title, children }) {
 
   if (!isOpen) return null
 
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (onSubmit) {
+      onSubmit(e)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
@@ -38,6 +45,7 @@ function Modal({ isOpen, onClose, title, children }) {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-semibold text-gray-900">{title}</h3>
             <button
+              type="button"
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
@@ -56,9 +64,15 @@ function Modal({ isOpen, onClose, title, children }) {
               </svg>
             </button>
           </div>
-
-          {/* Content */}
-          <div>{children}</div>
+          
+          {/* Content - wrapped in form if onSubmit is provided */}
+          {onSubmit ? (
+            <form onSubmit={handleSubmit}>
+              {children}
+            </form>
+          ) : (
+            <div>{children}</div>
+          )}
         </div>
       </div>
     </div>
