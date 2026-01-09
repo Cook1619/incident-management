@@ -34,10 +34,11 @@ function CreateIncidentModal({ isOpen, onClose }) {
     >
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
             Description *
           </label>
           <input
+            id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
@@ -48,10 +49,11 @@ function CreateIncidentModal({ isOpen, onClose }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="priority" className="block text-sm font-medium text-gray-700 mb-1">
             Priority
           </label>
           <select
+            id="priority"
             name="priority"
             value={formData.priority}
             onChange={handleChange}
@@ -65,10 +67,11 @@ function CreateIncidentModal({ isOpen, onClose }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
             Status
           </label>
           <select
+            id="status"
             name="status"
             value={formData.status}
             onChange={handleChange}
@@ -82,10 +85,11 @@ function CreateIncidentModal({ isOpen, onClose }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="assignedTo" className="block text-sm font-medium text-gray-700 mb-1">
             Assigned To
           </label>
           <input
+            id="assignedTo"
             name="assignedTo"
             value={formData.assignedTo}
             onChange={handleChange}
@@ -95,10 +99,11 @@ function CreateIncidentModal({ isOpen, onClose }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
             Category
           </label>
           <select
+            id="category"
             name="category"
             value={formData.category}
             onChange={handleChange}

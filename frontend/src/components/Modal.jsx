@@ -31,6 +31,7 @@ function Modal({ isOpen, onClose, title, children, onSubmit }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div
+        data-testid="modal-backdrop"
         className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
         onClick={onClose}
       ></div>
