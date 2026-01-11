@@ -1,4 +1,5 @@
 const Incident = require('../models/incidentModel');
+const { clearIncidentsCache } = require('../middleware/cache');
 
 // Get all incidents
 exports.getAllIncidents = async (req, res) => {
@@ -29,6 +30,10 @@ exports.getIncidentById = async (req, res) => {
 exports.createIncident = async (req, res) => {
   try {
     const newIncident = await Incident.create(req.body);
+    
+    // Clear cache after creating incident
+    await clearIncidentsCache();
+    
     res.status(201).json(newIncident);
   } catch (error) {
     console.error(error);
@@ -43,6 +48,10 @@ exports.updateIncident = async (req, res) => {
     if (!updatedIncident) {
       return res.status(404).json({ error: 'Incident not found' });
     }
+    
+    // Clear cache after updating incident
+    await clearIncidentsCache();
+    
     res.json(updatedIncident);
   } catch (error) {
     console.error(error);
@@ -54,6 +63,10 @@ exports.updateIncident = async (req, res) => {
 exports.deleteIncident = async (req, res) => {
   try {
     await Incident.delete(req.params.id);
+    
+    // Clear cache after deleting incident
+    await clearIncidentsCache();
+    
     res.json({ message: 'Incident deleted successfully' });
   } catch (error) {
     console.error(error);
