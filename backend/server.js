@@ -4,9 +4,13 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const incidentRoutes = require('./routes/incidentRoutes');
+const { connectRedis } = require('./config/redis');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Connect to Redis
+connectRedis();
 
 // Middleware
 app.use(cors());
