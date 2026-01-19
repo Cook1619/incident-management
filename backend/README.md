@@ -1,6 +1,13 @@
 # Incident Management Backend
 
-Node.js/Express backend API with PostgreSQL database and Redis caching.
+NestJS backend API with PostgreSQL database and Redis caching.
+
+## Technology Stack
+
+- **Framework**: NestJS (TypeScript)
+- **Database**: PostgreSQL
+- **Cache**: Redis
+- **ORM**: Native pg (PostgreSQL driver)
 
 ## Setup
 
@@ -24,11 +31,33 @@ Node.js/Express backend API with PostgreSQL database and Redis caching.
    - Update database credentials
    - Add Redis URL (optional): `REDIS_URL=redis://localhost:6379`
 
-5. Start the server:
+5. Build and start the server:
    ```bash
-   npm run dev  # Development mode with nodemon
-   npm start    # Production mode
+   npm run build        # Build TypeScript to JavaScript
+   npm run start:dev    # Development mode with hot reload
+   npm run start:prod   # Production mode
+   npm run dev          # Alias for start:dev
    ```
+
+## Project Structure
+
+```
+src/
+├── main.ts                 # Application entry point
+├── app.module.ts           # Root module
+├── cache/                  # Redis cache module
+│   ├── cache.module.ts
+│   └── cache.service.ts
+├── database/               # Database configuration
+│   └── database.module.ts
+└── incidents/              # Incidents feature module
+    ├── dto/                # Data Transfer Objects
+    ├── interfaces/         # TypeScript interfaces
+    ├── interceptors/       # Cache interceptor
+    ├── incidents.controller.ts
+    ├── incidents.service.ts
+    └── incidents.module.ts
+```
 
 ## Features
 
