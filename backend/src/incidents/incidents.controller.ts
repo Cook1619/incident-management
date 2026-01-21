@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
@@ -13,6 +14,7 @@ import {
 import { IncidentsService } from './incidents.service';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
+import { SearchIncidentDto } from './dto/search-incident.dto';
 
 @Controller('incidents')
 export class IncidentsController {
@@ -21,6 +23,11 @@ export class IncidentsController {
   @Get()
   findAll() {
     return this.incidentsService.findAll();
+  }
+
+  @Get('search')
+  search(@Query() searchDto: SearchIncidentDto) {
+    return this.incidentsService.search(searchDto);
   }
 
   @Get(':id')
