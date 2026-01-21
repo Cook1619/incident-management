@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { IncidentsModule } from './incidents/incidents.module';
 import { DatabaseModule } from './database/database.module';
 import { CacheModule } from './cache/cache.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CacheModule } from './cache/cache.module';
     DatabaseModule,
     CacheModule,
     IncidentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
 })
