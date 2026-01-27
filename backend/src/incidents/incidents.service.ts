@@ -1,122 +1,108 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
-import { Pool } from 'pg';
-import { DATABASE_POOL } from '../database/database.module';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@mikro-orm/nestjs';
+import { EntityManager, EntityRepository } from '@mikro-orm/core';
 import { CacheService } from '../cache/cache.service';
 import { Cacheable } from '../cache/cacheable.decorator';
 import { CreateIncidentDto } from './dto/create-incident.dto';
 import { UpdateIncidentDto } from './dto/update-incident.dto';
 import { SearchIncidentDto } from './dto/search-incident.dto';
-import { Incident } from './interfaces/incident.interface';
+import { Incident } from './entities/incident.entity';
 
 @Injectable()
 export class IncidentsService {
   constructor(
-    @Inject(DATABASE_POOL) private readonly pool: Pool,
+    @InjectRepository(Incident)
+    private readonly incidentRepository: EntityRepository<Incident>,
+    private readonly em: EntityManager,
     private readonly cacheService: CacheService,
   ) {}
 
   @Cacheable(3600) // Cache for 60 minutes
   async findAll(): Promise<Incident[]> {
-    const result = await this.pool.query(
-      'SELECT * FROM incidents ORDER BY created_at DESC',
-    );
-    return result.rows;
+    return this.incidentRepository.findAll({
+      orderBy: { createdAt: 'DESC' },
+    });
   }
 
   @Cacheable(3600) // Cache for 60 minutes
   async findOne(id: number): Promise<Incident> {
-    const result = await this.pool.query(
-      'SELECT * FROM incidents WHERE id = $1',
-      [id],
-    );
+    const incident = await this.incidentRepository.findOne({ id });
     
-    if (result.rows.length === 0) {
+    if (!incident) {
       throw new NotFoundException(`Incident with ID ${id} not found`);
     }
     
-    return result.rows[0];
+    return incident;
   }
 
   async create(createIncidentDto: CreateIncidentDto): Promise<Incident> {
     // Generate incident number
-    const numberResult = await this.pool.query(
-      "SELECT 'INC' || LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(number FROM 4) AS INTEGER)), 0) + 1 AS TEXT), 6, '0') AS next_number FROM incidents WHERE number LIKE 'INC%'",
+    const lastIncident = await this.incidentRepository.findOne(
+      { number: { $like: 'INC%' } },
+      { orderBy: { number: 'DESC' } }
     );
-    const incidentNumber = numberResult.rows[0].next_number;
+    
+    let nextNumber = 1;
+    if (lastIncident?.number) {
+      const lastNumber = parseInt(lastIncident.number.substring(3));
+      nextNumber = lastNumber + 1;
+    }
+    const incidentNumber = `INC${nextNumber.toString().padStart(7, '0')}`;
 
-    const result = await this.pool.query(
-      `INSERT INTO incidents (number, short_description, description, priority, status, assigned_to, category)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING *`,
-      [
-        incidentNumber,
-        createIncidentDto.short_description,
-        createIncidentDto.description || null,
-        createIncidentDto.priority,
-        createIncidentDto.status,
-        createIncidentDto.assigned_to || null,
-        createIncidentDto.category || null,
-      ],
-    );
+    const incident = this.incidentRepository.create({
+      number: incidentNumber,
+      shortDescription: createIncidentDto.short_description,
+      description: createIncidentDto.description,
+      priority: createIncidentDto.priority,
+      status: createIncidentDto.status,
+      assignedTo: createIncidentDto.assigned_to,
+      category: createIncidentDto.category,
+    });
+
+    await this.em.persistAndFlush(incident);
 
     // Clear cache
     await this.cacheService.clearIncidentsCache();
 
-    return result.rows[0];
+    return incident;
   }
 
   async update(id: number, updateIncidentDto: UpdateIncidentDto): Promise<Incident> {
-    // Check if incident exists
-    await this.findOne(id);
-
-    const fields = [];
-    const values = [];
-    let paramCount = 1;
+    const incident = await this.findOne(id);
 
     if (updateIncidentDto.short_description !== undefined) {
-      fields.push(`short_description = $${paramCount++}`);
-      values.push(updateIncidentDto.short_description);
+      incident.shortDescription = updateIncidentDto.short_description;
     }
     if (updateIncidentDto.description !== undefined) {
-      fields.push(`description = $${paramCount++}`);
-      values.push(updateIncidentDto.description);
+      incident.description = updateIncidentDto.description;
     }
     if (updateIncidentDto.priority !== undefined) {
-      fields.push(`priority = $${paramCount++}`);
-      values.push(updateIncidentDto.priority);
+      incident.priority = updateIncidentDto.priority;
     }
     if (updateIncidentDto.status !== undefined) {
-      fields.push(`status = $${paramCount++}`);
-      values.push(updateIncidentDto.status);
+      incident.status = updateIncidentDto.status;
     }
     if (updateIncidentDto.assigned_to !== undefined) {
-      fields.push(`assigned_to = $${paramCount++}`);
-      values.push(updateIncidentDto.assigned_to);
+      incident.assignedTo = updateIncidentDto.assigned_to;
     }
     if (updateIncidentDto.category !== undefined) {
-      fields.push(`category = $${paramCount++}`);
-      values.push(updateIncidentDto.category);
+      incident.category = updateIncidentDto.category;
     }
 
-    fields.push(`updated_at = CURRENT_TIMESTAMP`);
-    values.push(id);
+    incident.updatedAt = new Date();
 
-    const result = await this.pool.query(
-      `UPDATE incidents SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
-      values,
-    );
+    await this.em.flush();
 
     // Clear cache
     await this.cacheService.clearIncidentsCache();
 
-    return result.rows[0];
+    return incident;
   }
 
   async remove(id: number): Promise<void> {
-    // Check if incident exists
-    await this.findOne(id);
+    const incident = await this.findOne(id);
 
-    await this.pool.query('DELETE FROM incidents WHERE id = $1', [id]);
+    await this.em.removeAndFlush(incident);
 
     // Clear cache
     await this.cacheService.clearIncidentsCache();
@@ -134,54 +120,40 @@ export class IncidentsService {
    */
   @Cacheable(1800) // Cache for 30 minutes (searches change more often)
   async search(searchDto: SearchIncidentDto): Promise<Incident[]> {
-    const conditions: string[] = [];
-    const values: any[] = [];
-    let paramCount = 1;
+    const where: any = {};
 
     // Filter by status
     if (searchDto.status) {
-      conditions.push(`status = $${paramCount++}`);
-      values.push(searchDto.status);
+      where.status = searchDto.status;
     }
 
     // Filter by priority
     if (searchDto.priority) {
-      conditions.push(`priority = $${paramCount++}`);
-      values.push(searchDto.priority);
+      where.priority = searchDto.priority;
     }
 
     // Filter by category
     if (searchDto.category) {
-      conditions.push(`category = $${paramCount++}`);
-      values.push(searchDto.category);
+      where.category = searchDto.category;
     }
 
     // Search in title and description (case-insensitive)
     if (searchDto.search) {
-      conditions.push(
-        `(short_description ILIKE $${paramCount} OR description ILIKE $${paramCount})`,
-      );
-      values.push(`%${searchDto.search}%`);
-      paramCount++;
+      where.$or = [
+        { shortDescription: { $ilike: `%${searchDto.search}%` } },
+        { description: { $ilike: `%${searchDto.search}%` } },
+      ];
     }
 
-    // Build the WHERE clause
-    const whereClause = conditions.length > 0 
-      ? `WHERE ${conditions.join(' AND ')}` 
-      : '';
-
     // Build the ORDER BY clause
-    const validSortColumns = ['created_at', 'updated_at', 'priority', 'status', 'category', 'number'];
+    const validSortColumns = ['createdAt', 'updatedAt', 'priority', 'status', 'category', 'number'];
     const sortBy = validSortColumns.includes(searchDto.sortBy || '') 
       ? searchDto.sortBy 
-      : 'created_at';
+      : 'createdAt';
     const sortOrder = searchDto.sortOrder === 'ASC' ? 'ASC' : 'DESC';
-    const orderByClause = `ORDER BY ${sortBy} ${sortOrder}`;
 
-    // Execute the query
-    const query = `SELECT * FROM incidents ${whereClause} ${orderByClause}`;
-    const result = await this.pool.query(query, values);
-
-    return result.rows;
+    return this.incidentRepository.find(where, {
+      orderBy: { [sortBy]: sortOrder },
+    });
   }
 }
