@@ -15,12 +15,12 @@ function Practice() {
     const [formData, setFormData] = useState({
         name: '',
         role: '',
-        status: 'active'
+        status: 'Active'
     })
 
     const handleChange = (e) => {
-        const { name, value } = e.target
-        setItems((prev) => ({
+        const { name, value } = e.target;
+        setFormData(prev => ({
             ...prev,
             [name]: value
         }))
@@ -28,6 +28,12 @@ function Practice() {
 
     const handleSubmit = (e) => {
         e.preventDefault()
+        const newItem = {
+            id: items.length + 1,
+            ...formData
+        }
+        setItems([...items, newItem])
+        setFormData({name: '', role: '', status: 'Active'})
     }
 
     return (
@@ -39,20 +45,20 @@ function Practice() {
                     {/* List Section - Render dummyItems here */}
                     <div className="bg-white rounded-lg shadow-md p-6">
                         <h2 className="text-2xl font-semibold text-gray-700 mb-4">Item List</h2>
-
                         <ul className="space-y-3">
-                            {items.map((item) => (
-                                <li key={item.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            {items.map(({ id, name, role, status }) => (
+                                <li key={id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
-                                            <p className="text-sm text-gray-600">{item.role}</p>
+                                            <h3 className="font-semibold text-lg text-gray-800">{name}</h3>
+                                            <p className="text-sm text-gray-600">{role}</p>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${item.status === 'Active'
-                                                ? 'bg-green-100 text-green-800'
+                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                            status === 'Active' 
+                                                ? 'bg-green-100 text-green-800' 
                                                 : 'bg-gray-100 text-gray-800'
-                                            }`}>
-                                            {item.status}
+                                        }`}>
+                                            {status}
                                         </span>
                                     </div>
                                 </li>
@@ -64,43 +70,68 @@ function Practice() {
                     <div className="bg-white rounded-lg shadow-md p-6">
                         <h2 className="text-2xl font-semibold text-gray-700 mb-4">Add New Item</h2>
 
-                        {/* TODO: Build your form here */}
-                        <p className="text-gray-500">
-                            <form onSubmit={handleSubmit}>
-                                <label htmlFor='name'>Name *</label>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label htmlFor='name' className="block text-sm font-medium text-gray-700 mb-1">
+                                    Name*
+                                </label>
                                 <input
+                                    type="text"
                                     id="name"
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
+                                    placeholder="Enter name"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
                                 />
-                                <label htmlFor='role'>Role</label>
+                            </div>
+
+                            <div>
+                                <label htmlFor='role' className="block text-sm font-medium text-gray-700 mb-1">
+                                    Role*
+                                </label>
                                 <select
                                     id="role"
                                     name="role"
                                     value={formData.role}
                                     onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required
                                 >
-                                    <option value="developer">Developer</option>
-                                    <option value="manager">Manager</option>
-                                    <option value="designer">Designer</option>
-                                    <option value="qaEnginer">QA Engineer</option>
-
+                                    <option value="">Select a role</option>
+                                    <option value="Developer">Developer</option>
+                                    <option value="Designer">Designer</option>
+                                    <option value="QA Engineer">QA Engineer</option>
+                                    <option value="Manager">Manager</option>
                                 </select>
-                                 <select
+                            </div>
+
+                            <div>
+                                <label htmlFor='status' className="block text-sm font-medium text-gray-700 mb-1">
+                                    Status*
+                                </label>
+                                <select
                                     id="status"
                                     name="status"
                                     value={formData.status}
                                     onChange={handleChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    required
                                 >
                                     <option value="Active">Active</option>
                                     <option value="Inactive">Inactive</option>
-
                                 </select>
-                                <button type="submit">Add Item</button>
-                            </form>
-                        </p>
+                            </div>
+
+                            <button 
+                                type="submit"
+                                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                            >
+                                Add Item
+                            </button>
+                        </form>
+
                     </div>
                 </div>
             </div>
